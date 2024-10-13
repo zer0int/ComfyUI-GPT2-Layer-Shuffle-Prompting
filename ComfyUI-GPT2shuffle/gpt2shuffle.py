@@ -24,11 +24,6 @@ class GPT2ShuffleBase:
             timestamp = time.time()
             print(f"\nOriginal GPT-2 model saved at: {timestamp}\n")    
         
-        #if self.original_model is None:
-        #    self.original_model = copy.deepcopy(self.models[GPT2_model])
-        #    timestamp = time.time()
-        #    print(f"Original GPT-2 model saved at: {timestamp}")
-
         timestamp = time.time()
         print(f"\nGPT-2 Model re-load invoked: {timestamp}\n")
         torch.cuda.empty_cache()
@@ -42,12 +37,14 @@ class GPT2ShuffleNode(GPT2ShuffleBase):
         self.tokenizer = None
         self.original_model = None
         pass
-
+        
     @classmethod
-    def INPUT_TYPES(cls):
-        
-       # Defines input types for the GPT-2 node
-        
+    def IS_CHANGED(c):
+        sillytimestamp = time.time()
+        return sillytimestamp
+
+    @classmethod       
+    def INPUT_TYPES(cls):      
         return {
             "required": {
                 "text": ("STRING", {"default": "Sure, I will describe the image in great detail, focusing on lighting, mood, scene, details, subjects, and colors. Here is my description of a fantastical sci-fi robotic cat scene:", "multiline": True}),
@@ -64,7 +61,8 @@ class GPT2ShuffleNode(GPT2ShuffleBase):
     RETURN_NAMES = ("text",)
     FUNCTION = "generate"
     CATEGORY = "zer0int/GPT2-Shuffle"
-
+    
+   
     def generate(self, text, max_response_length, GPT2_model, shuffle_setting, shuffle_layer_range, temperature, top_p):
         
         model = self.get_original_model(GPT2_model) 
@@ -91,9 +89,8 @@ class GPT2ShuffleNode(GPT2ShuffleBase):
         # Check if all specified layers are within the valid range
         if all(0 <= layer_idx < num_layers - 2 for layer_idx in shuffle_layer_range_to_shuffle):
         
-            if shuffle_setting is not "None":
-                # Shuffle the Layers
-            
+            if shuffle_setting != "None":             
+                # Shuffle the Layers        
                 for layer_idx in shuffle_layer_range_to_shuffle:
                     layer1 = model.transformer.h[layer_idx]
                     layer2 = model.transformer.h[layer_idx + 1]
@@ -114,11 +111,9 @@ class GPT2ShuffleNode(GPT2ShuffleBase):
                         layer2.ln_2 = torch.nn.Identity()
     
         else:
-            # Handle out-of-range layers gracefully
             error_prompt = f"ERROR: Specified Layers for GPT-2 out of range. Max for {GPT2_model}: {num_layers} -2 (don't shuffle the output!) = {num_layers - 2}"
-            print(error_prompt)
-           
-        
+            print(error_prompt)         
+      
         # Generate text
         outputs = model.generate(
             input_ids,
@@ -129,7 +124,7 @@ class GPT2ShuffleNode(GPT2ShuffleBase):
             use_cache=True,
             do_sample=True,
             no_repeat_ngram_size=2,
-            eos_token_id=eos_id, #eos_token_id
+            eos_token_id=eos_id,
             pad_token_id=eos_id, 
             length_penalty=-1.0,
         )
@@ -137,13 +132,13 @@ class GPT2ShuffleNode(GPT2ShuffleBase):
         output_texts = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
         new_prompt = output_texts[0].strip()
         new_prompt = new_prompt.replace(text, "").strip()
-        
+    
+        timestamp = time.time()        
+    
         if error_prompt is not "empty":
             return (error_prompt,)
-        
         else:
             return (new_prompt,)
-
 
 NODE_CLASS_MAPPINGS = {
     "GPT2ShuffleNode": GPT2ShuffleNode,
