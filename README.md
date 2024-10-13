@@ -11,6 +11,8 @@
 
 ![example-of-node](https://github.com/user-attachments/assets/e398be83-d1cf-48fa-854f-34025fb61874)
 
+![helpful-info](https://github.com/user-attachments/assets/42a78366-a54b-4e7d-a557-b58fe72306fa)
+
 ----
 Example using Flux.1:
 
